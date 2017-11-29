@@ -34,10 +34,7 @@ public class Player : MonoBehaviour {
 
         anim = GetComponentInChildren<Animator>();
 
-        var respawnPositions = GameObject.FindGameObjectsWithTag("Respawn");
-        var respawnPositionTransform = respawnPositions[Random.Range(0, respawnPositions.Length)].transform; // TODO: ask GameManager for position
-        transform.position = respawnPositionTransform.position;
-        transform.rotation = respawnPositionTransform.rotation;
+        GameManager.Instance.SetStartPosition(transform);
 	}
 	
 	// Update is called once per frame

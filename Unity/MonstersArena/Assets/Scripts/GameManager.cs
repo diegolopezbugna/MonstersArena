@@ -16,19 +16,25 @@ public class GameManager : Singleton<GameManager> {
 
     public Monster[] monsters;
 
+    private List<int> _alreadyUsedStartedPositions;
+    private GameObject[] _respawnPositions;
+
 	// Use this for initialization
 	void Start () {
         DontDestroyOnLoad(this.gameObject);
 
-        foreach (var m in monsters)
+        if (monsterSelectGridContainer != null)
         {
-            var mb = Instantiate(monsterButtonPrefab, monsterSelectGridContainer.transform);
-            mb.name = "mb_" + m.Code;
-            mb.GetComponentInChildren<Text>().text = m.Name;
-            mb.GetComponentInChildren<Button>().onClick.AddListener(() =>
-                {
-                    OnSelectMonster(m);
-                });
+            foreach (var m in monsters)
+            {
+                var mb = Instantiate(monsterButtonPrefab, monsterSelectGridContainer.transform);
+                mb.name = "mb_" + m.Code;
+                mb.GetComponentInChildren<Text>().text = m.Name;
+                mb.GetComponentInChildren<Button>().onClick.AddListener(() =>
+                    {
+                        OnSelectMonster(m);
+                    });
+            }
         }
 	}
 	
@@ -51,15 +57,15 @@ public class GameManager : Singleton<GameManager> {
         SelectedMonster = monster;
         loading.SetActive(true);
         ScreenManager.Instance.CloseCurrent();
-        SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+        SceneManager.sceneLoaded += SceneManager_SceneLoaded;
         StartCoroutine(DelayedStart(1f, LoadScene("Arena")));
     }
 
-    void SceneManager_sceneLoaded (Scene arg0, LoadSceneMode arg1)
+    void SceneManager_SceneLoaded(Scene arg0, LoadSceneMode arg1)
     {
         var player = GameObject.FindGameObjectWithTag("Player");
         player.GetComponentInChildren<Player>().MonsterPrefab = SelectedMonster;
-        SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
+        SceneManager.sceneLoaded -= SceneManager_SceneLoaded;
     }
 
     IEnumerator DelayedStart(float delay, IEnumerator enumerator)
@@ -77,4 +83,33 @@ public class GameManager : Singleton<GameManager> {
         }
     }
 
+    public void SetStartPosition(Transform transform)
+    {
+        int startPositionIndex;
+
+        if (_alreadyUsedStartedPositions == null)
+            _alreadyUsedStartedPositions = new List<int>();
+
+        lock (_alreadyUsedStartedPositions)
+        {
+            if (_respawnPositions == null)
+                _respawnPositions = GameObject.FindGameObjectsWithTag("Respawn");
+
+            if (_alreadyUsedStartedPositions.Count >= _respawnPositions.Length)
+            {
+                Debug.Log("No more starting positions left!");
+                return;
+            }
+
+            startPositionIndex = Random.Range(0, _respawnPositions.Length);
+            while (_alreadyUsedStartedPositions.Contains(startPositionIndex))
+                startPositionIndex = Random.Range(0, _respawnPositions.Length);
+
+            _alreadyUsedStartedPositions.Add(startPositionIndex);
+        }
+
+        var respawnPositionTransform = _respawnPositions[startPositionIndex].transform;
+        transform.position = respawnPositionTransform.position;
+        transform.rotation = respawnPositionTransform.rotation;
+    }
 }

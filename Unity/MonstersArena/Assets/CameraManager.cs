@@ -54,7 +54,7 @@ public class CameraManager : Singleton<CameraManager> {
                 // TODO: get camera positions from SerializeField placeholders
                 if (_currentCameraDistance == 1)
                 {
-                    offsetFixedCameraFromPlayer = new Vector3(0, 4, -4);
+                    offsetFixedCameraFromPlayer = new Vector3(0, 3, -7);
                     fixedCamera.transform.rotation = Quaternion.Euler(new Vector3(10, 0, 0));
                 }
                 else if (_currentCameraDistance == 2)

@@ -20,4 +20,10 @@ public class Monster : MonoBehaviour {
 	void Update () {
 		
 	}
+
+    public float GetStopDistance(Monster enemy)
+    {
+        return 5.0f; // TODO: stop distance depending on enemy & self
+    }
+
 }
