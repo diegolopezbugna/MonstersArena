@@ -12,9 +12,9 @@ public enum CameraMode
 
 public class CameraManager : Singleton<CameraManager> {
 
-    [SerializeField] private Camera fixedCamera;
-    [SerializeField] private Camera overTheShoulderCamera;
-    [SerializeField] private Player player;
+    private Camera fixedCamera;
+    private Camera overTheShoulderCamera;
+    private Player player;
 
     private Vector3 offsetFixedCameraFromPlayer = Vector3.zero;
 
@@ -27,13 +27,13 @@ public class CameraManager : Singleton<CameraManager> {
             _currentCameraMode = value;
             if (value == CameraMode.Fixed)
             {
-                fixedCamera.gameObject.SetActive(true);
-                overTheShoulderCamera.gameObject.SetActive(false);
+                overTheShoulderCamera.enabled = false;
+                fixedCamera.enabled = true;
             }
             else if (value == CameraMode.OverTheShoulder)
             {
-                fixedCamera.gameObject.SetActive(false);
-                overTheShoulderCamera.gameObject.SetActive(true);
+                fixedCamera.enabled = false;
+                overTheShoulderCamera.enabled = true;
             }
             else
             {
@@ -109,6 +109,10 @@ public class CameraManager : Singleton<CameraManager> {
 	// Use this for initialization
 	void Start() 
     {
+        fixedCamera = GetComponent<Camera>();
+        player = GameObject.FindGameObjectWithTag("Player").GetComponent<Player>();
+        overTheShoulderCamera = player.GetComponentInChildren<Camera>();
+        
         CurrentCameraMode = CameraMode.Fixed;
         CurrentCameraDistance = 2;
 	}
