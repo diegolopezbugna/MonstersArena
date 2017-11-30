@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class Player : MonoBehaviour {
+public class Player : NetworkBehaviour {
 
     private Monster Monster { get; set; }
 
@@ -33,13 +34,20 @@ public class Player : MonoBehaviour {
         Monster = monsterGO.GetComponentInChildren<Monster>();
 
         anim = GetComponentInChildren<Animator>();
-
-        GameManager.Instance.SetStartPosition(transform);
 	}
 	
+    public override void OnStartLocalPlayer()
+    {
+        GetComponent<AudioListener>().enabled = true;
+        CameraManager.Instance.SetPlayer(this);
+    }
+
 	// Update is called once per frame
 	void Update()
     {
+        if (!isLocalPlayer)
+            return;
+        
         ForwardTurnMove();
 
         if (Input.GetMouseButtonDown(0))

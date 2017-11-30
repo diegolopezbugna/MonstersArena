@@ -27,13 +27,15 @@ public class CameraManager : Singleton<CameraManager> {
             _currentCameraMode = value;
             if (value == CameraMode.Fixed)
             {
-                overTheShoulderCamera.enabled = false;
+                if (overTheShoulderCamera != null)
+                    overTheShoulderCamera.enabled = false;
                 fixedCamera.enabled = true;
             }
             else if (value == CameraMode.OverTheShoulder)
             {
                 fixedCamera.enabled = false;
-                overTheShoulderCamera.enabled = true;
+                if (overTheShoulderCamera != null)
+                    overTheShoulderCamera.enabled = true;
             }
             else
             {
@@ -104,15 +106,17 @@ public class CameraManager : Singleton<CameraManager> {
         }
     }
 
-
+    public void SetPlayer(Player player)
+    {
+        this.player = player;
+        overTheShoulderCamera = player.GetComponentInChildren<Camera>();
+    }
 
 	// Use this for initialization
 	void Start() 
     {
         fixedCamera = GetComponent<Camera>();
-        player = GameObject.FindGameObjectWithTag("Player").GetComponent<Player>();
-        overTheShoulderCamera = player.GetComponentInChildren<Camera>();
-        
+
         CurrentCameraMode = CameraMode.Fixed;
         CurrentCameraDistance = 2;
 	}
@@ -130,7 +134,8 @@ public class CameraManager : Singleton<CameraManager> {
 
     private void PositionFixedCamera()
     {
-        fixedCamera.transform.position = player.transform.position + offsetFixedCameraFromPlayer;
+        if (player != null)
+            fixedCamera.transform.position = player.transform.position + offsetFixedCameraFromPlayer;
     }
 
     private void CheckInputForChangeCameraMode()

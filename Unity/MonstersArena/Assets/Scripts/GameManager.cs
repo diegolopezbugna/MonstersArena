@@ -16,8 +16,8 @@ public class GameManager : Singleton<GameManager> {
 
     public Monster[] monsters;
 
-    private List<int> _alreadyUsedStartedPositions;
-    private GameObject[] _respawnPositions;
+//    private List<int> _alreadyUsedStartedPositions;
+//    private GameObject[] _respawnPositions;
 
 	// Use this for initialization
 	void Start () {
@@ -83,33 +83,33 @@ public class GameManager : Singleton<GameManager> {
         }
     }
 
-    public void SetStartPosition(Transform transform)
-    {
-        int startPositionIndex;
-
-        if (_alreadyUsedStartedPositions == null)
-            _alreadyUsedStartedPositions = new List<int>();
-
-        lock (_alreadyUsedStartedPositions)
-        {
-            if (_respawnPositions == null)
-                _respawnPositions = GameObject.FindGameObjectsWithTag("Respawn");
-
-            if (_alreadyUsedStartedPositions.Count >= _respawnPositions.Length)
-            {
-                Debug.Log("No more starting positions left!");
-                return;
-            }
-
-            startPositionIndex = Random.Range(0, _respawnPositions.Length);
-            while (_alreadyUsedStartedPositions.Contains(startPositionIndex))
-                startPositionIndex = Random.Range(0, _respawnPositions.Length);
-
-            _alreadyUsedStartedPositions.Add(startPositionIndex);
-        }
-
-        var respawnPositionTransform = _respawnPositions[startPositionIndex].transform;
-        transform.position = respawnPositionTransform.position;
-        transform.rotation = respawnPositionTransform.rotation;
-    }
+//    public void SetStartPosition(Transform transform)
+//    {
+//        int startPositionIndex;
+//
+//        if (_alreadyUsedStartedPositions == null)
+//            _alreadyUsedStartedPositions = new List<int>();
+//
+//        lock (_alreadyUsedStartedPositions)
+//        {
+//            if (_respawnPositions == null)
+//                _respawnPositions = GameObject.FindGameObjectsWithTag("Respawn");
+//
+//            if (_alreadyUsedStartedPositions.Count >= _respawnPositions.Length)
+//            {
+//                Debug.Log("No more starting positions left!");
+//                return;
+//            }
+//
+//            startPositionIndex = Random.Range(0, _respawnPositions.Length);
+//            while (_alreadyUsedStartedPositions.Contains(startPositionIndex))
+//                startPositionIndex = Random.Range(0, _respawnPositions.Length);
+//
+//            _alreadyUsedStartedPositions.Add(startPositionIndex);
+//        }
+//
+//        var respawnPositionTransform = _respawnPositions[startPositionIndex].transform;
+//        transform.position = respawnPositionTransform.position;
+//        transform.rotation = respawnPositionTransform.rotation;
+//    }
 }

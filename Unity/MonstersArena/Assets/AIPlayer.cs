@@ -38,7 +38,7 @@ public class AIPlayer : MonoBehaviour {
 
         anim = GetComponentInChildren<Animator>();
 
-        GameManager.Instance.SetStartPosition(transform);
+//        GameManager.Instance.SetStartPosition(transform);
 
         playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
         playerMonster = playerTransform.GetComponentInChildren<Monster>();
