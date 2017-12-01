@@ -14,6 +14,10 @@ public class Player : NetworkBehaviour {
 
     [SerializeField] private Monster DebugMonsterPrefab;
 
+    [SyncVar] Vector3 realPosition = Vector3.zero;
+    [SyncVar] Quaternion realRotation;
+    private float updateInterval;
+
     public int Speed
     {
         get {
@@ -52,7 +56,11 @@ public class Player : NetworkBehaviour {
 	void Update()
     {
         if (!isLocalPlayer)
+        {
+            transform.position = Vector3.Lerp(transform.position, realPosition, 0.1f);
+            transform.rotation = Quaternion.Lerp(transform.rotation, realRotation, 0.1f);
             return;
+        }
         
         ForwardTurnMove();
 
@@ -61,6 +69,14 @@ public class Player : NetworkBehaviour {
 
         if (Input.GetMouseButtonDown(1))
             netAnim.SetTrigger("Attack2");
+
+        // update the server with position/rotation
+        updateInterval += Time.deltaTime;
+        if (updateInterval > 0.11f) // 9 times per second
+        {
+            updateInterval = 0;
+            CmdSync(transform.position, transform.rotation);
+        }
 	}
 
     private void ForwardTurnMove()
@@ -82,4 +98,10 @@ public class Player : NetworkBehaviour {
         // TODO: need to move the head
     }
 
+    [Command]
+    void CmdSync(Vector3 position, Quaternion rotation)
+    {
+        realPosition = position;
+        realRotation = rotation;
+    }
 }

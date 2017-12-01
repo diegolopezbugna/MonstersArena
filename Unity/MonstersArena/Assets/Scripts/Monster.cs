@@ -10,6 +10,7 @@ public class Monster : MonoBehaviour {
     public int RotationSpeed;
     public int Damage1;
     public int HitPoints;
+    public int CreditsCost;
 
     public RuntimeAnimatorController AnimatorController;
     public Avatar Avatar;

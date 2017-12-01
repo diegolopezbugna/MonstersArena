@@ -3,14 +3,26 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.Networking;
+using System;
 
 public class GameManager : Singleton<GameManager> {
 
+    private const float TIME_TO_WAIT = 2f;
+
     private ScreenManager screenManager;
+    private AutoNetworkManager networkManager;
+    private bool isWaitingOtherPlayers;
+    private float lastTimePlayerJoined;
+
+    private int playerCount;
 
     public Monster SelectedMonster { get; set; }
 
     public Monster[] monsters;
+
+    public int InitialCredits = 1000;
+    public int Credits;
 
 //    private List<int> _alreadyUsedStartedPositions;
 //    private GameObject[] _respawnPositions;
@@ -18,19 +30,90 @@ public class GameManager : Singleton<GameManager> {
 	void Start() 
     {
         screenManager = FindObjectOfType<ScreenManager>();
+
+        networkManager = NetworkManager.singleton as AutoNetworkManager;
+        networkManager.OnClientConnectedEvent += NetworkManager_OnClientConnectedEvent;
+        networkManager.OnClientDisconnectedEvent += NetworkManager_OnClientDisconnectedEvent;
+        networkManager.OnClientSceneChangedEvent += NetworkManager_OnClientSceneChangedEvent;
+
+        Credits = InitialCredits;
 	}
+
+    void NetworkManager_OnClientSceneChangedEvent(object sender, EventArgs e)
+    {
+        ClientScene.Ready(networkManager.client.connection);
+        ClientScene.AddPlayer(0);
+    }
+
+    void NetworkManager_OnClientConnectedEvent(object sender, EventArgs e)
+    {
+        if (isWaitingOtherPlayers)
+        {
+            playerCount += 1;
+            screenManager.RefreshPlayers(playerCount);
+            lastTimePlayerJoined = Time.time;
+        }
+    }
 	
+    void NetworkManager_OnClientDisconnectedEvent(object sender, EventArgs e)
+    {
+        if (isWaitingOtherPlayers)
+        {
+            playerCount -= 1;
+            screenManager.RefreshPlayers(playerCount);
+        }
+    }
+
+    void Update()
+    {
+        if (isWaitingOtherPlayers)
+        {
+            if (playerCount > 1 && (Time.time - lastTimePlayerJoined) > TIME_TO_WAIT)
+            {
+                // start game
+                isWaitingOtherPlayers = false;
+                StartCoroutine(StartMatch());
+            }
+        }
+    }
+
     public void OnSelectMonster(Monster monster)
     {
         SelectedMonster = monster;
+
+        if (Credits >= monster.CreditsCost)
+        {
+            Credits = Credits -= monster.CreditsCost;
+            StartCoroutine(screenManager.RefreshCredits(Credits, () => screenManager.OpenWaitingOtherPlayers()));
+
+            isWaitingOtherPlayers = true;
+            var c = NetworkManager.singleton.StartHost();
+            if (c == null)
+                NetworkManager.singleton.StartClient();
+        }
+        else
+        {
+            // TODO: error message
+            Debug.Log("not enough credits");
+        }
+
+
 //        SceneManager.sceneLoaded += SceneManager_SceneLoaded;
-        StartCoroutine(LoadScene("Arena"));
+//        StartCoroutine(LoadScene("Arena"));
     }
 
 //    void SceneManager_SceneLoaded(Scene arg0, LoadSceneMode arg1)
 //    {
 //        SceneManager.sceneLoaded -= SceneManager_SceneLoaded;
 //    }
+
+    IEnumerator StartMatch()
+    {
+        screenManager.ShowLoading();
+        yield return StartCoroutine(LoadScene("Arena"));
+//        ClientScene.Ready(networkManager.client.connection);
+//        ClientScene.AddPlayer(0);
+    }
 
     IEnumerator DelayedStart(float delay, IEnumerator enumerator)
     {
@@ -40,11 +123,13 @@ public class GameManager : Singleton<GameManager> {
 
     IEnumerator LoadScene(string sceneName)
     {
-        var asyncLoad = SceneManager.LoadSceneAsync(sceneName);
-        while (!asyncLoad.isDone)
-        {
-            yield return null;
-        }
+        networkManager.ServerChangeScene(sceneName);
+        yield return null;
+//        var asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+//        while (!asyncLoad.isDone)
+//        {
+//            yield return null;
+//        }
     }
 
 //    public void SetStartPosition(Transform transform)

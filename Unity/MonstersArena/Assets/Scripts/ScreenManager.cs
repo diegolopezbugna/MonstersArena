@@ -9,9 +9,12 @@ public class ScreenManager : MonoBehaviour {
 
     public Animator screenPlayMode;
     public Animator screenSelectMonster;
+    public Animator screenWaitingOtherPlayers;
     public GameObject loading;
     public GameObject monsterSelectGridContainer;
     public GameObject monsterButtonPrefab;
+    public Text creditsText;
+    public Text playersText;
 
     //Currently Open Screen
     private Animator m_Open;
@@ -30,12 +33,15 @@ public class ScreenManager : MonoBehaviour {
             {
                 var mb = Instantiate(monsterButtonPrefab, monsterSelectGridContainer.transform);
                 mb.name = "mb_" + m.Code;
-                mb.GetComponentInChildren<Text>().text = m.Name;
+                var texts = mb.GetComponentsInChildren<Text>();
+                texts[0].text = m.CreditsCost.ToString();
+                texts[1].text = m.Name;
                 mb.GetComponentInChildren<Button>().onClick.AddListener(() =>
                     {
-                        loading.SetActive(true);
-                        CloseCurrent();
-                        StartCoroutine(DelayedStart(1f, () => GameManager.Instance.OnSelectMonster(m)));
+                        GameManager.Instance.OnSelectMonster(m);
+//                        loading.SetActive(true);
+//                        CloseCurrent();
+//                        StartCoroutine(DelayedStart(1f, () => GameManager.Instance.OnSelectMonster(m)));
                     });
             }
         }
@@ -61,6 +67,53 @@ public class ScreenManager : MonoBehaviour {
     {
         OpenPanel(screenSelectMonster);
     }
+
+    public void OpenWaitingOtherPlayers()
+    {
+        OpenPanel(screenWaitingOtherPlayers);
+    }
+
+    public void ShowLoading()
+    {
+        loading.SetActive(true);
+        CloseCurrent();
+    }
+
+    public IEnumerator RefreshCredits(int credits, Action onFinished)
+    {
+        var currentCredits = int.Parse(creditsText.text);
+        var creditsStep = (currentCredits - credits) / 10;
+
+        for (int i = 0; i < 10; i++)
+        {
+            currentCredits -= creditsStep;
+            creditsText.text = currentCredits.ToString();
+            yield return new WaitForSecondsRealtime(0.01f);
+        }
+
+        currentCredits = credits + 5;
+
+        for (int i = 0; i < 5; i++)
+        {
+            currentCredits -= 1;
+            creditsText.text = currentCredits.ToString();
+            yield return new WaitForSecondsRealtime(0.01f);
+        }
+
+        creditsText.text = credits.ToString();
+        yield return new WaitForSecondsRealtime(0.5f);
+
+        onFinished();
+    }
+
+    public void RefreshPlayers(int players)
+    {
+        playersText.text = players.ToString();
+    }
+
+
+
+
 
     //Closes the currently open panel and opens the provided one.
     //It also takes care of handling the navigation, setting the new Selected element.
