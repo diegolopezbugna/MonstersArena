@@ -6,11 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : Singleton<GameManager> {
 
-    public Animator screenPlayMode;
-    public Animator screenSelectMonster;
-    public GameObject loading;
-    public GameObject monsterSelectGridContainer;
-    public GameObject monsterButtonPrefab;
+    private ScreenManager screenManager;
 
     public Monster SelectedMonster { get; set; }
 
@@ -19,54 +15,22 @@ public class GameManager : Singleton<GameManager> {
 //    private List<int> _alreadyUsedStartedPositions;
 //    private GameObject[] _respawnPositions;
 
-	// Use this for initialization
-	void Start () {
-        DontDestroyOnLoad(this.gameObject);
-
-        if (monsterSelectGridContainer != null)
-        {
-            foreach (var m in monsters)
-            {
-                var mb = Instantiate(monsterButtonPrefab, monsterSelectGridContainer.transform);
-                mb.name = "mb_" + m.Code;
-                mb.GetComponentInChildren<Text>().text = m.Name;
-                mb.GetComponentInChildren<Button>().onClick.AddListener(() =>
-                    {
-                        OnSelectMonster(m);
-                    });
-            }
-        }
+	void Start() 
+    {
+        screenManager = FindObjectOfType<ScreenManager>();
 	}
 	
-	// Update is called once per frame
-	void Update () {
-		
-	}
-
-    public void OnSelectOnePlayer()
-    {
-        ScreenManager.Instance.OpenPanel(screenSelectMonster);
-    }
-
-    public void OnSelectMultiplayer()
-    {
-    }
-
     public void OnSelectMonster(Monster monster)
     {
         SelectedMonster = monster;
-        loading.SetActive(true);
-        ScreenManager.Instance.CloseCurrent();
-        SceneManager.sceneLoaded += SceneManager_SceneLoaded;
-        StartCoroutine(DelayedStart(1f, LoadScene("Arena")));
+//        SceneManager.sceneLoaded += SceneManager_SceneLoaded;
+        StartCoroutine(LoadScene("Arena"));
     }
 
-    void SceneManager_SceneLoaded(Scene arg0, LoadSceneMode arg1)
-    {
-        var player = GameObject.FindGameObjectWithTag("Player");
-        player.GetComponentInChildren<Player>().MonsterPrefab = SelectedMonster;
-        SceneManager.sceneLoaded -= SceneManager_SceneLoaded;
-    }
+//    void SceneManager_SceneLoaded(Scene arg0, LoadSceneMode arg1)
+//    {
+//        SceneManager.sceneLoaded -= SceneManager_SceneLoaded;
+//    }
 
     IEnumerator DelayedStart(float delay, IEnumerator enumerator)
     {

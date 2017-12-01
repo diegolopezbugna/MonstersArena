@@ -49,6 +49,7 @@
      <Compile Include="Assets\AIPlayer.cs" />
      <Compile Include="Assets\CameraManager.cs" />
      <Compile Include="Assets\HEROIC FANTASY CREATURES FULL PACK\DEMONIC CREATURES PACK\DEMON LORD\SCRIPT\ScrollingUVs.cs" />
+     <Compile Include="Assets\Loader.cs" />
      <Compile Include="Assets\Scripts\GameManager.cs" />
      <Compile Include="Assets\Scripts\Monster.cs" />
      <Compile Include="Assets\Scripts\Player.cs" />

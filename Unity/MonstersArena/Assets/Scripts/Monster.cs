@@ -11,6 +11,9 @@ public class Monster : MonoBehaviour {
     public int Damage1;
     public int HitPoints;
 
+    public RuntimeAnimatorController AnimatorController;
+    public Avatar Avatar;
+
 	// Use this for initialization
 	void Start () {
 		

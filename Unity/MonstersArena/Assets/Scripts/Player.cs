@@ -8,10 +8,11 @@ public class Player : NetworkBehaviour {
     private Monster Monster { get; set; }
 
     private Animator anim;
+    private NetworkAnimator netAnim;
 
     [SerializeField] private GameObject monsterSlot;
 
-    public Monster MonsterPrefab;
+    [SerializeField] private Monster DebugMonsterPrefab;
 
     public int Speed
     {
@@ -27,13 +28,19 @@ public class Player : NetworkBehaviour {
         }
     }
 
-	// Use this for initialization
 	void Start()
     {
-        var monsterGO = Instantiate(MonsterPrefab, monsterSlot.transform);
+        var monsterPrefab = GameManager.Instance.SelectedMonster != null ? GameManager.Instance.SelectedMonster : DebugMonsterPrefab;
+        var monsterGO = Instantiate(monsterPrefab, monsterSlot.transform);
         Monster = monsterGO.GetComponentInChildren<Monster>();
 
         anim = GetComponentInChildren<Animator>();
+        anim.runtimeAnimatorController = Monster.AnimatorController;
+        anim.avatar = Monster.Avatar;
+        netAnim = GetComponentInChildren<NetworkAnimator>();
+
+        for (int i = 0; i < anim.parameterCount; i++)
+            netAnim.SetParameterAutoSend(i, true);
 	}
 	
     public override void OnStartLocalPlayer()
@@ -42,7 +49,6 @@ public class Player : NetworkBehaviour {
         CameraManager.Instance.SetPlayer(this);
     }
 
-	// Update is called once per frame
 	void Update()
     {
         if (!isLocalPlayer)
@@ -51,10 +57,10 @@ public class Player : NetworkBehaviour {
         ForwardTurnMove();
 
         if (Input.GetMouseButtonDown(0))
-            anim.SetTrigger("Attack1");
+            netAnim.SetTrigger("Attack1");
 
         if (Input.GetMouseButtonDown(1))
-            anim.SetTrigger("Attack2");
+            netAnim.SetTrigger("Attack2");
 	}
 
     private void ForwardTurnMove()

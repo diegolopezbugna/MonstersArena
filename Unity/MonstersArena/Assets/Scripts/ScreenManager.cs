@@ -3,11 +3,15 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
-public class ScreenManager : Singleton<ScreenManager> {
+public class ScreenManager : MonoBehaviour {
 
-    //Screen to open automatically at the start of the Scene
-    public Animator initiallyOpen;
+    public Animator screenPlayMode;
+    public Animator screenSelectMonster;
+    public GameObject loading;
+    public GameObject monsterSelectGridContainer;
+    public GameObject monsterButtonPrefab;
 
     //Currently Open Screen
     private Animator m_Open;
@@ -16,15 +20,46 @@ public class ScreenManager : Singleton<ScreenManager> {
     //Used when closing a Screen, so we can go back to the button that opened it.
     private GameObject m_PreviouslySelected;
 
-    public void OnEnable()
+    void Start()
     {
-        //We cache the Hash to the "Open" Parameter, so we can feed to Animator.SetBool.
-        //m_OpenParameterId = Animator.StringToHash (k_OpenTransitionName);
+        OpenPanel(screenPlayMode);
+        
+        if (monsterSelectGridContainer != null)
+        {
+            foreach (var m in GameManager.Instance.monsters)
+            {
+                var mb = Instantiate(monsterButtonPrefab, monsterSelectGridContainer.transform);
+                mb.name = "mb_" + m.Code;
+                mb.GetComponentInChildren<Text>().text = m.Name;
+                mb.GetComponentInChildren<Button>().onClick.AddListener(() =>
+                    {
+                        loading.SetActive(true);
+                        CloseCurrent();
+                        StartCoroutine(DelayedStart(1f, () => GameManager.Instance.OnSelectMonster(m)));
+                    });
+            }
+        }
+    }
 
-        //If set, open the initial Screen now.
-        if (initiallyOpen == null)
-            return;
-        OpenPanel(initiallyOpen);
+    IEnumerator DelayedStart(float delay, Action action)
+    {
+        yield return new WaitForSeconds(delay);
+        action();
+    }
+
+    public void OnSelectOnePlayer()
+    {
+        OpenPanel(screenSelectMonster);
+    }
+
+    public void OnSelectMultiplayer()
+    {
+        OpenPanel(screenSelectMonster);
+    }
+
+    public void OpenPlayMode()
+    {
+        OpenPanel(screenSelectMonster);
     }
 
     //Closes the currently open panel and opens the provided one.
