@@ -15,6 +15,9 @@ public class ScreenManager : MonoBehaviour {
     public GameObject monsterButtonPrefab;
     public Text creditsText;
     public Text playersText;
+    public Text countDownText;
+
+    private Coroutine countDownCoroutine;
 
     //Currently Open Screen
     private Animator m_Open;
@@ -110,6 +113,24 @@ public class ScreenManager : MonoBehaviour {
     {
         playersText.text = players.ToString();
     }
+
+    public void StartCountDown(int countDownSeconds)
+    {
+        if (countDownCoroutine != null)
+            StopCoroutine(countDownCoroutine);
+        countDownCoroutine = StartCoroutine(CountDown(countDownSeconds));
+    }
+
+    IEnumerator CountDown(int countDownSeconds)
+    {
+        for (int i = countDownSeconds; i >= 0; i--)
+        {
+            countDownText.text = i.ToString();
+            yield return new WaitForSecondsRealtime(1f);
+        }
+    }
+
+
 
 
 

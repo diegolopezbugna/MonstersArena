@@ -8,14 +8,12 @@ using System;
 
 public class GameManager : Singleton<GameManager> {
 
-    private const float TIME_TO_WAIT = 2f;
+    private const float TIME_TO_WAIT = 5f;
 
     private ScreenManager screenManager;
     private AutoNetworkManager networkManager;
     private bool isWaitingOtherPlayers;
     private float lastTimePlayerJoined;
-
-    private int playerCount;
 
     public Monster SelectedMonster { get; set; }
 
@@ -32,12 +30,25 @@ public class GameManager : Singleton<GameManager> {
         screenManager = FindObjectOfType<ScreenManager>();
 
         networkManager = NetworkManager.singleton as AutoNetworkManager;
-        networkManager.OnClientConnectedEvent += NetworkManager_OnClientConnectedEvent;
-        networkManager.OnClientDisconnectedEvent += NetworkManager_OnClientDisconnectedEvent;
+        networkManager.Initialize();
         networkManager.OnClientSceneChangedEvent += NetworkManager_OnClientSceneChangedEvent;
+        networkManager.OnPlayersCountChangedEvent += NetworkManager_OnPlayersCountChangedEvent;
 
         Credits = InitialCredits;
 	}
+
+    void NetworkManager_OnPlayersCountChangedEvent(object sender, PlayersCountChangedEventArgs e)
+    {
+        if (isWaitingOtherPlayers)
+        {
+            screenManager.RefreshPlayers(e.PlayersCount);
+            if (e.PlayersCount > 1)
+            {
+                screenManager.StartCountDown(Mathf.CeilToInt(TIME_TO_WAIT));
+                lastTimePlayerJoined = Time.time;
+            }
+        }
+    }
 
     void NetworkManager_OnClientSceneChangedEvent(object sender, EventArgs e)
     {
@@ -45,30 +56,11 @@ public class GameManager : Singleton<GameManager> {
         ClientScene.AddPlayer(0);
     }
 
-    void NetworkManager_OnClientConnectedEvent(object sender, EventArgs e)
-    {
-        if (isWaitingOtherPlayers)
-        {
-            playerCount += 1;
-            screenManager.RefreshPlayers(playerCount);
-            lastTimePlayerJoined = Time.time;
-        }
-    }
-	
-    void NetworkManager_OnClientDisconnectedEvent(object sender, EventArgs e)
-    {
-        if (isWaitingOtherPlayers)
-        {
-            playerCount -= 1;
-            screenManager.RefreshPlayers(playerCount);
-        }
-    }
-
     void Update()
     {
         if (isWaitingOtherPlayers)
         {
-            if (playerCount > 1 && (Time.time - lastTimePlayerJoined) > TIME_TO_WAIT)
+            if (networkManager.PlayersCount > 1 && (Time.time - lastTimePlayerJoined) > TIME_TO_WAIT)
             {
                 // start game
                 isWaitingOtherPlayers = false;
@@ -87,9 +79,7 @@ public class GameManager : Singleton<GameManager> {
             StartCoroutine(screenManager.RefreshCredits(Credits, () => screenManager.OpenWaitingOtherPlayers()));
 
             isWaitingOtherPlayers = true;
-            var c = NetworkManager.singleton.StartHost();
-            if (c == null)
-                NetworkManager.singleton.StartClient();
+            networkManager.JoinOrCreateGame();
         }
         else
         {
@@ -123,6 +113,7 @@ public class GameManager : Singleton<GameManager> {
 
     IEnumerator LoadScene(string sceneName)
     {
+        yield return new WaitForSecondsRealtime(1f);
         networkManager.ServerChangeScene(sceneName);
         yield return null;
 //        var asyncLoad = SceneManager.LoadSceneAsync(sceneName);
