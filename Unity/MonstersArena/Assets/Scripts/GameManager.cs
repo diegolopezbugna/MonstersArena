@@ -13,7 +13,6 @@ public class GameManager : Singleton<GameManager> {
     private ScreenManager screenManager;
     private AutoNetworkManager networkManager;
     private bool isWaitingOtherPlayers;
-    private float lastTimePlayerJoined;
 
     public Monster SelectedMonster { get; set; }
 
@@ -43,10 +42,7 @@ public class GameManager : Singleton<GameManager> {
         {
             screenManager.RefreshPlayers(e.PlayersCount);
             if (e.PlayersCount > 1)
-            {
                 screenManager.StartCountDown(Mathf.CeilToInt(TIME_TO_WAIT));
-                lastTimePlayerJoined = Time.time;
-            }
         }
     }
 
@@ -60,7 +56,7 @@ public class GameManager : Singleton<GameManager> {
     {
         if (isWaitingOtherPlayers)
         {
-            if (networkManager.PlayersCount > 1 && (Time.time - lastTimePlayerJoined) > TIME_TO_WAIT)
+            if (networkManager.PlayersCount > 1 && (Time.time - networkManager.LastTimePlayerJoined) > TIME_TO_WAIT)
             {
                 // start game
                 isWaitingOtherPlayers = false;

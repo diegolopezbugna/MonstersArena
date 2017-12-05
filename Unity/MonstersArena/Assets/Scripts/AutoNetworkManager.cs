@@ -32,6 +32,7 @@ public class AutoNetworkManager : NetworkManager {
     public uint MatchSize = 8;
 
     public int PlayersCount;
+    public float LastTimePlayerJoined;
 
     public void Initialize()
     {
@@ -46,6 +47,7 @@ public class AutoNetworkManager : NetworkManager {
             var c = NetworkManager.singleton.StartHost();
             if (c == null)
                 NetworkManager.singleton.StartClient();
+            RegisterMessageHandlers();
         }
         else
         {
@@ -119,6 +121,7 @@ public class AutoNetworkManager : NetworkManager {
             OnClientConnectedEvent(this, EventArgs.Empty);
 
         PlayersCount += 1;
+        LastTimePlayerJoined = Time.time;
         SendPlayersCount(PlayersCount);
     }
 
