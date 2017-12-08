@@ -13,6 +13,7 @@ public class GameManager : Singleton<GameManager> {
     private AutoNetworkManager networkManager;
     private bool isWaitingOtherPlayers;
 
+    public bool IsOnePlayer = false;
     public Monster SelectedMonster { get; set; }
 
     public Monster[] monsters;
@@ -20,7 +21,7 @@ public class GameManager : Singleton<GameManager> {
     public int InitialCredits = 1000;
     public int Credits;
 
-    private List<int> _alreadyUsedStartedPositions;
+    private List<int> _alreadyUsedStartedPositions; // TODO: move to its own class
     private GameObject[] _respawnPositions;
 
 	void Start() 
@@ -48,7 +49,8 @@ public class GameManager : Singleton<GameManager> {
     {
         if (isWaitingOtherPlayers)
         {
-            if (networkManager.PlayersCount > 1 && (Time.time - networkManager.LastTimePlayerJoined) > TIME_TO_WAIT)
+            if (IsOnePlayer || 
+                (networkManager.PlayersCount > 1 && (Time.time - networkManager.LastTimePlayerJoined) > TIME_TO_WAIT))
             {
                 // start game
                 isWaitingOtherPlayers = false;

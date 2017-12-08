@@ -58,6 +58,7 @@ public class ScreenManager : MonoBehaviour {
 
     public void OnSelectOnePlayer()
     {
+        GameManager.Instance.IsOnePlayer = true;
         OpenPanel(screenSelectMonster);
     }
 

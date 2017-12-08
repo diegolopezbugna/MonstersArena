@@ -45,7 +45,7 @@ public class AutoNetworkManager : NetworkManager {
 
     public void JoinOrCreateGame()
     {
-        if (IsLan)
+        if (IsLan || GameManager.Instance.IsOnePlayer)
         {
             var c = NetworkManager.singleton.StartHost();
             if (c == null)
