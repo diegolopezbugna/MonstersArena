@@ -23,16 +23,19 @@ public class AutoNetworkManager : NetworkManager {
 
     private const string MATCH_NAME = "default"; // TODO: should be retrieved by a GET request to our backend match making depending on user level & other data
 
-    public event EventHandler OnClientConnectedEvent;
-    public event EventHandler OnClientDisconnectedEvent;
-    public event EventHandler OnClientSceneChangedEvent;
     public event EventHandler<PlayersCountChangedEventArgs> OnPlayersCountChangedEvent;
 
     public bool IsLan = false;
-    public uint MatchSize = 8;
+    public uint MatchSize = 4;
 
     public int PlayersCount;
     public float LastTimePlayerJoined;
+
+    private MatchInfo currentMatch;
+
+    public class MonsterSelectedMessage : MessageBase {
+        public string monsterSelected;
+    }
 
     public void Initialize()
     {
@@ -80,9 +83,9 @@ public class AutoNetworkManager : NetworkManager {
     {
         if (success)
         {
-            Debug.Log("Create match succeeded");
-            MatchInfo hostInfo = matchInfo;
-            StartClient(hostInfo);
+            Debug.Log("Join match succeeded");
+            StartClient(matchInfo);
+            currentMatch = matchInfo;
             RegisterMessageHandlers();
         }
         else
@@ -96,9 +99,9 @@ public class AutoNetworkManager : NetworkManager {
         if (success)
         {
             Debug.Log("Create match succeeded");
-            MatchInfo hostInfo = matchInfo;
-//            NetworkServer.Listen(hostInfo, 9000);  // TODO: is this needed??
-            StartHost(hostInfo);
+            //NetworkServer.Listen(matchInfo, 9000);  // TODO: is this needed??
+            StartHost(matchInfo);
+            currentMatch = matchInfo;
             RegisterMessageHandlers();
         }
         else
@@ -107,18 +110,41 @@ public class AutoNetworkManager : NetworkManager {
         }
     }
 
+    public void DropCurrentConnection()
+    {
+        Debug.LogFormat("DropCurrentConnection {0}", currentMatch);
+        if (currentMatch != null)
+            matchMaker.DropConnection(currentMatch.networkId, currentMatch.nodeId, 0, (bool success, string extendedInfo) => {
+                Debug.LogFormat("OnInternetMatchDropConnection {0},{1}", success, extendedInfo);
+            });
+    }
+
     private void RegisterMessageHandlers()
     {
         client.RegisterHandler(MyMsgType.PlayersCount, OnPlayersCountMessageReceived);
     }
 
+    public override void OnClientSceneChanged(NetworkConnection conn)
+    {
+        Debug.LogFormat("OnClientSceneChanged (GameManager.Instance.SelectedMonster:{0})", GameManager.Instance.SelectedMonster);
+        var monsterSelectedMessage = new MonsterSelectedMessage() { monsterSelected = GameManager.Instance.SelectedMonster.Code };
+        ClientScene.AddPlayer(conn, 0, monsterSelectedMessage);
+    }
+
+    public override void OnServerAddPlayer(NetworkConnection conn, short playerControllerId, NetworkReader extraMessageReader) 
+    {
+        var message = extraMessageReader.ReadMessage<MonsterSelectedMessage>();
+        Debug.LogFormat("OnServerAddPlayer (connectionId:{0}, monster:{1}", conn.connectionId, message.monsterSelected);
+
+        var startPosition = GameManager.Instance.GetNextStartPosition();
+        var player = Instantiate(GameManager.Instance.GetMonsterPrefab(message.monsterSelected), startPosition.position, startPosition.rotation);
+        NetworkServer.AddPlayerForConnection(conn, player, playerControllerId);
+    }
+
     public override void OnServerConnect(NetworkConnection conn)
     {
-        base.OnServerConnect(conn);
         Debug.Log("OnServerConnect");
-
-        if (OnClientConnectedEvent != null)
-            OnClientConnectedEvent(this, EventArgs.Empty);
+        base.OnServerConnect(conn);
 
         PlayersCount += 1;
         LastTimePlayerJoined = Time.time;
@@ -127,23 +153,11 @@ public class AutoNetworkManager : NetworkManager {
 
     public override void OnServerDisconnect(NetworkConnection conn)
     {
-        base.OnServerDisconnect(conn);
         Debug.Log("OnServerDisconnect");
-
-        if (OnClientDisconnectedEvent != null)
-            OnClientDisconnectedEvent(this, EventArgs.Empty);
+        base.OnServerDisconnect(conn);
 
         PlayersCount -= 1;
         SendPlayersCount(PlayersCount);
-    }
-
-    public override void OnClientSceneChanged(NetworkConnection conn)
-    {
-        base.OnClientSceneChanged(conn);
-        Debug.Log("OnClientSceneChanged");
-
-        if (OnClientSceneChangedEvent != null)
-            OnClientSceneChangedEvent(this, EventArgs.Empty);
     }
 
     public void OnPlayersCountMessageReceived(NetworkMessage netMsg)

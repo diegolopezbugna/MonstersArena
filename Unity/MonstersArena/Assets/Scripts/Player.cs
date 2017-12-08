@@ -10,10 +10,6 @@ public class Player : NetworkBehaviour {
     private Animator anim;
     private NetworkAnimator netAnim;
 
-    [SerializeField] private GameObject monsterSlot;
-
-    [SerializeField] private Monster DebugMonsterPrefab;
-
     [SyncVar] Vector3 realPosition = Vector3.zero;
     [SyncVar] Quaternion realRotation;
     private float updateInterval;
@@ -34,14 +30,9 @@ public class Player : NetworkBehaviour {
 
 	void Start()
     {
-        var monsterPrefab = GameManager.Instance.SelectedMonster != null ? GameManager.Instance.SelectedMonster : DebugMonsterPrefab;
-        var monsterGO = Instantiate(monsterPrefab, monsterSlot.transform);
-        Monster = monsterGO.GetComponentInChildren<Monster>();
-
-        anim = GetComponentInChildren<Animator>();
-        anim.runtimeAnimatorController = Monster.AnimatorController;
-        anim.avatar = Monster.Avatar;
-        netAnim = GetComponentInChildren<NetworkAnimator>();
+        Monster = GetComponent<Monster>();
+        anim = GetComponent<Animator>();
+        netAnim = GetComponent<NetworkAnimator>();
 
         for (int i = 0; i < anim.parameterCount; i++)
             netAnim.SetParameterAutoSend(i, true);

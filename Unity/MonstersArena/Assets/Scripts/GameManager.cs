@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.Networking;
-using System;
 
 public class GameManager : Singleton<GameManager> {
 
@@ -21,8 +20,8 @@ public class GameManager : Singleton<GameManager> {
     public int InitialCredits = 1000;
     public int Credits;
 
-//    private List<int> _alreadyUsedStartedPositions;
-//    private GameObject[] _respawnPositions;
+    private List<int> _alreadyUsedStartedPositions;
+    private GameObject[] _respawnPositions;
 
 	void Start() 
     {
@@ -30,7 +29,6 @@ public class GameManager : Singleton<GameManager> {
 
         networkManager = NetworkManager.singleton as AutoNetworkManager;
         networkManager.Initialize();
-        networkManager.OnClientSceneChangedEvent += NetworkManager_OnClientSceneChangedEvent;
         networkManager.OnPlayersCountChangedEvent += NetworkManager_OnPlayersCountChangedEvent;
 
         Credits = InitialCredits;
@@ -44,12 +42,6 @@ public class GameManager : Singleton<GameManager> {
             if (e.PlayersCount > 1)
                 screenManager.StartCountDown(Mathf.CeilToInt(TIME_TO_WAIT));
         }
-    }
-
-    void NetworkManager_OnClientSceneChangedEvent(object sender, EventArgs e)
-    {
-        ClientScene.Ready(networkManager.client.connection);
-        ClientScene.AddPlayer(0);
     }
 
     void Update()
@@ -71,7 +63,7 @@ public class GameManager : Singleton<GameManager> {
 
         if (Credits >= monster.CreditsCost)
         {
-            Credits = Credits -= monster.CreditsCost;
+            Credits -= monster.CreditsCost;
             StartCoroutine(screenManager.RefreshCredits(Credits, () => screenManager.OpenWaitingOtherPlayers()));
 
             isWaitingOtherPlayers = true;
@@ -97,8 +89,6 @@ public class GameManager : Singleton<GameManager> {
     {
         screenManager.ShowLoading();
         yield return StartCoroutine(LoadScene("Arena"));
-//        ClientScene.Ready(networkManager.client.connection);
-//        ClientScene.AddPlayer(0);
     }
 
     IEnumerator DelayedStart(float delay, IEnumerator enumerator)
@@ -110,7 +100,7 @@ public class GameManager : Singleton<GameManager> {
     IEnumerator LoadScene(string sceneName)
     {
         yield return new WaitForSecondsRealtime(1f);
-        networkManager.ServerChangeScene(sceneName);
+        networkManager.ServerChangeScene(sceneName);  // TODO: async?
         yield return null;
 //        var asyncLoad = SceneManager.LoadSceneAsync(sceneName);
 //        while (!asyncLoad.isDone)
@@ -119,33 +109,41 @@ public class GameManager : Singleton<GameManager> {
 //        }
     }
 
-//    public void SetStartPosition(Transform transform)
-//    {
-//        int startPositionIndex;
-//
-//        if (_alreadyUsedStartedPositions == null)
-//            _alreadyUsedStartedPositions = new List<int>();
-//
-//        lock (_alreadyUsedStartedPositions)
-//        {
-//            if (_respawnPositions == null)
-//                _respawnPositions = GameObject.FindGameObjectsWithTag("Respawn");
-//
-//            if (_alreadyUsedStartedPositions.Count >= _respawnPositions.Length)
-//            {
-//                Debug.Log("No more starting positions left!");
-//                return;
-//            }
-//
-//            startPositionIndex = Random.Range(0, _respawnPositions.Length);
-//            while (_alreadyUsedStartedPositions.Contains(startPositionIndex))
-//                startPositionIndex = Random.Range(0, _respawnPositions.Length);
-//
-//            _alreadyUsedStartedPositions.Add(startPositionIndex);
-//        }
-//
-//        var respawnPositionTransform = _respawnPositions[startPositionIndex].transform;
-//        transform.position = respawnPositionTransform.position;
-//        transform.rotation = respawnPositionTransform.rotation;
-//    }
+    public Transform GetNextStartPosition()
+    {
+        int startPositionIndex;
+
+        if (_alreadyUsedStartedPositions == null)
+            _alreadyUsedStartedPositions = new List<int>();
+
+        lock (_alreadyUsedStartedPositions)
+        {
+            if (_respawnPositions == null)
+                _respawnPositions = GameObject.FindGameObjectsWithTag("Respawn");
+
+            if (_alreadyUsedStartedPositions.Count >= _respawnPositions.Length)
+            {
+                Debug.Log("No more starting positions left!");
+                return null;
+            }
+
+            startPositionIndex = Random.Range(0, _respawnPositions.Length);
+            while (_alreadyUsedStartedPositions.Contains(startPositionIndex))
+                startPositionIndex = Random.Range(0, _respawnPositions.Length);
+
+            _alreadyUsedStartedPositions.Add(startPositionIndex);
+        }
+
+        return _respawnPositions[startPositionIndex].transform;
+    }
+
+    public GameObject GetMonsterPrefab(string monsterCode)
+    {
+        foreach (var m in monsters)
+        {
+            if (m.Code == monsterCode)
+                return m.gameObject;
+        }
+        return null;
+    }
 }
