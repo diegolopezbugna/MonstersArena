@@ -129,6 +129,20 @@ public class AutoNetworkManager : NetworkManager {
         Debug.LogFormat("OnClientSceneChanged (GameManager.Instance.SelectedMonster:{0})", GameManager.Instance.SelectedMonster);
         var monsterSelectedMessage = new MonsterSelectedMessage() { monsterSelected = GameManager.Instance.SelectedMonster.Code };
         ClientScene.AddPlayer(conn, 0, monsterSelectedMessage);
+
+        if (GameManager.Instance.IsOnePlayer)
+        {
+            var startPosition = GameManager.Instance.GetNextStartPosition();
+            while (startPosition != null)
+            {
+                var aiplayerGO = Instantiate(GameManager.Instance.monsters[UnityEngine.Random.Range(0, GameManager.Instance.monsters.Length)].gameObject, startPosition.position, startPosition.rotation);
+                var aiplayer = aiplayerGO.AddComponent<AIPlayer>();
+                aiplayer.SetTargetPlayer(conn.playerControllers[0].gameObject.GetComponent<Player>());
+                aiplayerGO.GetComponent<Player>().isAI = true;
+
+                startPosition = GameManager.Instance.GetNextStartPosition();
+            }
+        }
     }
 
     public override void OnServerAddPlayer(NetworkConnection conn, short playerControllerId, NetworkReader extraMessageReader) 

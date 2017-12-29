@@ -5,10 +5,13 @@ using UnityEngine.Networking;
 
 public class Player : NetworkBehaviour {
 
-    private Monster Monster { get; set; }
+    public Monster Monster { get; set; }
 
     private Animator anim;
     private NetworkAnimator netAnim;
+    private CharacterController characterController;
+
+    public bool isAI = false;
 
     [SyncVar] Vector3 realPosition = Vector3.zero;
     [SyncVar] Quaternion realRotation;
@@ -33,6 +36,7 @@ public class Player : NetworkBehaviour {
         Monster = GetComponent<Monster>();
         anim = GetComponent<Animator>();
         netAnim = GetComponent<NetworkAnimator>();
+        characterController = GetComponent<CharacterController>();
 
         for (int i = 0; i < anim.parameterCount; i++)
             netAnim.SetParameterAutoSend(i, true);
@@ -46,6 +50,9 @@ public class Player : NetworkBehaviour {
 
 	void Update()
     {
+        if (isAI)
+            return;
+        
         if (!isLocalPlayer)
         {
             transform.position = Vector3.Lerp(transform.position, realPosition, 0.1f);
@@ -77,7 +84,9 @@ public class Player : NetworkBehaviour {
 
         float translation = inputAxisV * Speed * Time.deltaTime;
         float rotation = inputAxisH * RotationSpeed * Time.deltaTime;
-        transform.Translate(0, 0, translation);
+//        transform.Translate(0, 0, translation);
+        var forward = transform.TransformDirection(Vector3.forward);
+        characterController.Move(forward * translation);
         transform.Rotate(0, rotation, 0);
 
         anim.SetFloat("Turn", inputAxisH);

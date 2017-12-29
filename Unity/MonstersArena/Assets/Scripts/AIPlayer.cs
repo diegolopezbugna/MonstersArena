@@ -2,56 +2,33 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// TODO: remove duplicated code from Player
 public class AIPlayer : MonoBehaviour { 
 
-    private Monster Monster { get; set; }
-
+    private Player player;
     private Animator anim;
+    private CharacterController characterController;
 
-    [SerializeField] private GameObject monsterSlot;
+    private Player targetPlayer;
 
-    public Monster MonsterPrefab;
-
-    public int Speed
+    public void SetTargetPlayer(Player targetPlayer)
     {
-        get {
-            return Monster.Speed;
-        }
+        this.targetPlayer = targetPlayer;
     }
 
-    public int RotationSpeed
-    {
-        get {
-            return Monster.RotationSpeed;
-        }
-    }
-
-    private Transform playerTransform;
-    private Monster playerMonster;
-
-    // Use this for initialization
     void Start()
     {
-        var monsterGO = Instantiate(MonsterPrefab, monsterSlot.transform);
-        Monster = monsterGO.GetComponentInChildren<Monster>();
-
-        anim = GetComponentInChildren<Animator>();
-
-//        GameManager.Instance.SetStartPosition(transform);
-
-        playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
-        playerMonster = playerTransform.GetComponentInChildren<Monster>();
+        player = GetComponent<Player>();
+        anim = GetComponent<Animator>();
+        characterController = GetComponent<CharacterController>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         //transform.LookAt(playerTransform); // TODO: lerp
 
-        var direction = playerTransform.position - transform.position;
+        var direction = targetPlayer.transform.position - transform.position;
 
-        var stopDistance = Monster.GetStopDistance(playerMonster);
+        var stopDistance = player.Monster.GetStopDistance(targetPlayer.Monster);
         var stopDistanceSqr = stopDistance * stopDistance;
 
         var diferenceMagnitude = direction.magnitude - stopDistance;
@@ -64,11 +41,10 @@ public class AIPlayer : MonoBehaviour {
         if (diferenceMagnitude > 1)
             diferenceMagnitude = 1f;
 
-        //direction.Normalize();
-        //transform.Translate(direction * Speed * Time.deltaTime, Space.World);
-
-        transform.Translate(Vector3.forward * diferenceMagnitude * Speed * Time.deltaTime, Space.Self);
-        transform.LookAt(playerTransform);
+        var forward = transform.TransformDirection(Vector3.forward);
+//        transform.Translate(Vector3.forward * diferenceMagnitude * player.Speed * Time.deltaTime, Space.Self);
+        characterController.Move(forward * diferenceMagnitude * player.Speed * Time.deltaTime);
+        transform.LookAt(targetPlayer.transform);
 
         anim.SetFloat("Forward", diferenceMagnitude);
         //anim.SetFloat("Turn", inputAxisH);
