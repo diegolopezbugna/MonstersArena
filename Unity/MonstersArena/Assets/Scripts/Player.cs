@@ -89,13 +89,64 @@ public class Player : NetworkBehaviour {
         characterController.Move(forward * translation);
         transform.Rotate(0, rotation, 0);
 
-        anim.SetFloat("Turn", inputAxisH);
-        anim.SetFloat("Forward", inputAxisV);
+        anim.SetFloat("Turn", inputAxisH); // netAnim??
+        anim.SetFloat("Forward", inputAxisV); // netAnim??
     }
 
     private void FirstPersonCameraMove()
     {
         // TODO: need to move the head
+    }
+
+    private void AnimationHitStart() {
+        Debug.LogFormat("HIT START {0}", Monster.Damage1);
+        SetWeaponsCollidersEnabled(true);
+    }
+
+    private void AnimationHitEnd() {
+        Debug.LogFormat("HIT END {0}", Monster.Damage1);
+        SetWeaponsCollidersEnabled(false);
+    }
+
+    private void SetWeaponsCollidersEnabled(bool enabled) {
+        var boxColliders = gameObject.GetComponentsInChildren<BoxCollider>(true);
+        foreach (var c in boxColliders) {
+            // TODO: this enables all colliders!!! not only the corresponding attack!!  or check tag or add a lists of weapons colliders to Monster 
+            c.enabled = enabled;
+        }
+    }
+
+    void OnTriggerEnter(Collider other) {
+        if (other.gameObject.transform.IsChildOf(transform))
+            return; // collided with itself!
+        if (Monster.HitPoints <= 0)
+            return; // dead
+
+        var attackingMonster = other.GetComponentInParent<Monster>();
+        var damage = attackingMonster.GetDamageByWeapon(other.gameObject);
+
+        Monster.HitPoints -= damage;
+        Debug.LogFormat("HIT {0}, current HitPoints: {1}", Monster.Name, Monster.HitPoints);
+
+        if (Monster.HitPoints > 0)
+        {
+            anim.SetTrigger("TakeHit"); // todo: disable movement   // anim o netAnim??
+        }
+        else
+        {
+            anim.SetTrigger("Die"); // todo: disable movement   // anim o netAnim??
+            StopComponents();
+        }
+
+    }
+
+    private void StopComponents() {
+        SetWeaponsCollidersEnabled(false);
+        var aiPlayer = GetComponent<AIPlayer>();
+        if (aiPlayer != null)
+            aiPlayer.enabled = false;
+        Destroy(characterController);
+        enabled = false;
     }
 
     [Command]
