@@ -10,6 +10,8 @@ public class AIPlayer : MonoBehaviour {
 
     private Player targetPlayer;
 
+    private bool isAttacking = false;
+
     public void SetTargetPlayer(Player targetPlayer)
     {
         this.targetPlayer = targetPlayer;
@@ -24,32 +26,52 @@ public class AIPlayer : MonoBehaviour {
 
     void Update()
     {
-        //transform.LookAt(playerTransform); // TODO: lerp
-
+        if (isAttacking)
+            return;
+        if (targetPlayer.Monster.HitPoints <= 0)  // TODO: AIPlayer should have been disabled when player dies
+            return;
+        
         var direction = targetPlayer.transform.position - transform.position;
 
         var stopDistance = player.Monster.GetStopDistance(targetPlayer.Monster);
         var stopDistanceSqr = stopDistance * stopDistance;
 
-        var diferenceMagnitude = direction.magnitude - stopDistance;
-        if (diferenceMagnitude <= 0)
+        var diferenceMagnitudeToStopDistance = direction.magnitude - stopDistance;
+        if (diferenceMagnitudeToStopDistance <= 0.01)
         {
             anim.SetFloat("Forward", 0);
+            TryAttack();
             return;
         }
 
-        if (diferenceMagnitude > 1)
-            diferenceMagnitude = 1f;
+        if (diferenceMagnitudeToStopDistance > 1)
+            diferenceMagnitudeToStopDistance = 1f;
 
         var forward = transform.TransformDirection(Vector3.forward);
 //        transform.Translate(Vector3.forward * diferenceMagnitude * player.Speed * Time.deltaTime, Space.Self);
-        characterController.Move(forward * diferenceMagnitude * player.Speed * Time.deltaTime);
-        transform.LookAt(targetPlayer.transform);
+        characterController.Move(forward * diferenceMagnitudeToStopDistance * player.Speed * Time.deltaTime);
+        transform.LookAt(targetPlayer.transform); // TODO: lerp
 
-        anim.SetFloat("Forward", diferenceMagnitude);
+        anim.SetFloat("Forward", diferenceMagnitudeToStopDistance);
         //anim.SetFloat("Turn", inputAxisH);
 
         // TODO: fight UI
+    }
+
+    void TryAttack() {
+        if (!isAttacking)
+            Attack();
+    }
+
+    void Attack() {
+        isAttacking = true;
+        anim.SetTrigger("Attack1"); // TODO: attack2
+        StartCoroutine(EndAttack());
+    }
+
+    IEnumerator EndAttack() {
+        yield return new WaitForSecondsRealtime(2f); // TODO: check animation or Animation event?
+        isAttacking = false;
     }
 
 }
